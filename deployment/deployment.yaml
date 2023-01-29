@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webrtc-deployment
+  namespace: webrtc
+  labels:
+    app: webrtc
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: webrtc
+  template:
+    metadata:
+      labels:
+        app: webrtc
+    spec:
+        volumes:
+        - name: webrtc-pv
+          persistentVolumeClaim:
+            claimName: webrtc-pvc
+        imagePullSecrets:
+        - name: regcred
+        containers:
+            - name: webrtc
+              image: saalejo/django_video:002
+              imagePullPolicy: Always
+              ports:
+                - containerPort: 8000
+            - name: redis
+              image: redis:7
+              ports:
+                - containerPort: 6379

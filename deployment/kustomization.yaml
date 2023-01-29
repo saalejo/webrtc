@@ -1,0 +1,7 @@
+resources:
+  - name-space.yaml
+  - persistent-volume.yaml
+  - persistent-volume-claim.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml

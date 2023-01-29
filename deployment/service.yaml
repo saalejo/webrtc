@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: webrtc-svc
+  namespace: webrtc
+spec:
+  type: NodePort
+  selector:
+      app: webrtc
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000

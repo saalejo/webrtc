@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  name: webrtc-ingress
+  namespace: webrtc
+spec:
+  rules:
+  - host: webrtc.agapanto.com.co
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webrtc-svc
+            port:
+              number: 8000
+  tls:
+  - hosts:
+    - webrtc.agapanto.com.co
+    secretName: webrtc-com-co
