@@ -23,7 +23,7 @@ spec:
         - name: regcred
         containers:
             - name: webrtc
-              image: saalejo/django_video:002
+              image: saalejo/webrtc:latest
               imagePullPolicy: Always
               ports:
                 - containerPort: 8000
