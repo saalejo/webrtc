@@ -8,6 +8,7 @@
     <script type="text/javascript">
         var redishost= "{{ redishost }}";
     </script>
+    <script src="//unpkg.com/alpinejs" defer></script>
 </head>
 <body>
 <div class="oculto">
@@ -18,7 +19,9 @@
 </div>
 <video id="idMyVideoTag" src="" autoplay></video>
 <video id="idTheirVideoTag" src="" autoplay></video>
-
+<div x-data="datos">
+    <video x-for="usuario in usuarios" src="" autoplay></video>
+</div>
 <div class="oculto">
     <label>Your name</label> <input type="text" id="idMyName">
     <label>Message</label> <input type="text" id="idMessage">
@@ -35,6 +38,7 @@
 </div>
 
 <script src="{% static 'videocall/js/video_call.js' %}"></script>
+<script src="{% static 'videocall/js/app.js' %}"></script>
 <style type="text/css">
  .oculto {
     display: none;

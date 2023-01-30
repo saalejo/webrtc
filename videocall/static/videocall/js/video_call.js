@@ -114,9 +114,8 @@ function displaySignalMessage(message) {
 function startSignaling() {
     console.log('startSignaling');
     displaySignalMessage('starting signaling...');
-    rtcConnection = new rtcConnectionection(configuration);
+    rtcConnection = new RTCPeerConnection(configuration);
 
-    // send any ice candidates to other peer
     rtcConnection.onicecandidate = function (evt) {
         if (evt.candidate) {
             videoSignalSocket.send(JSON.stringify({
