@@ -54,7 +54,7 @@ class VideoCallSignalConsumer(AsyncWebsocketConsumer):
         this func will be called 2 times.
         """
         data = event['data']
-
+        print(data)
         # Send message to all channels except parent channel
         if self.channel_name != event['sender_channel_name']:
             print('channel name != ')
