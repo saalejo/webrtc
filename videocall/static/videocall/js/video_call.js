@@ -1,4 +1,3 @@
-// Frontend io we have { io.on as input, io.emit as op)
 let width = 250;
 let height = 250;
 var myVideoArea = document.querySelector('#idMyVideoTag');
@@ -36,7 +35,8 @@ var configuration = {
         'url': 'stun:stun1.l.google.com:19302' //'stun:stun.l.google.com:19302'
     }]
 };
-var rtcConnection;
+var rtcPeerConn;
+var rtcConnections = [];
 
 var signalingArea = document.querySelector('#idSignalingArea');
 
@@ -59,30 +59,39 @@ videoSignalSocket.onmessage = function (e) {
 
     displaySignalMessage('Signal received:' + data.type);
 
-    if (!rtcConnection) {
-        console.log('rtc conn doesnt exists yet');
-        startSignaling();
-    }
+    // setup RTC peer connection object
+    
 
     // we are sending some bogus signal on load with type='user_here'. we call below
     // code only for real signal message
-    if (data.type != 'user_here') {
-        console.log('data type != user_here');
-        var message = JSON.parse(data.message); // parse json from message
-
-        // sdp message means remote party made us an offer
-        if (message.sdp) {
-            rtcConnection.setRemoteDescription(
-                new RTCSessionDescription(message.sdp), function () {
-                    // if we received an offer, we need to answer
-                    if (rtcConnection.remoteDescription.type == 'offer') {
-                        rtcConnection.createAnswer(sendLocalDesc, logError);
-                    }
-                }, logError);
-        } else {
-            rtcConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+    if (data.type == 'user_here') {
+        element = rtcConnections.find(c => c.user == data.message);
+        if (!element) {
+            console.log('rtc Peer conn doesnt exists yet');
+            element = {
+                user: data.message,
+                connection: null
+            };
+            startSignaling(element);
         }
     }
+    // else {
+    //     console.log('data type != user_here');
+    //     var message = JSON.parse(data.message); // parse json from message
+
+    //     // sdp message means remote party made us an offer
+    //     if (message.sdp) {
+    //         rtcPeerConn.setRemoteDescription(
+    //             new RTCSessionDescription(message.sdp), function () {
+    //                 // if we received an offer, we need to answer
+    //                 if (rtcPeerConn.remoteDescription.type == 'offer') {
+    //                     rtcPeerConn.createAnswer(sendLocalDesc, logError);
+    //                 }
+    //             }, logError);
+    //     } else {
+    //         rtcPeerConn.addIceCandidate(new RTCIceCandidate(message.candidate));
+    //     }
+    // }
 
 };
 
@@ -99,7 +108,7 @@ var videoSignalSocketReady = setInterval(function () {
     if (videoSignalSocket.readyState === 1) {
         videoSignalSocket.send(JSON.stringify({
             'type': 'user_here',
-            'message': 'Are you ready for a call?',
+            'message': new Date(),
             'room': SIGNAL_ROOM
         }));
         clearInterval(videoSignalSocketReady);
@@ -111,12 +120,13 @@ function displaySignalMessage(message) {
     signalingArea.innerHTML = signalingArea.innerHTML + "<br/>" + message;
 }
 
-function startSignaling() {
+function startSignaling(element) {
     console.log('startSignaling');
     displaySignalMessage('starting signaling...');
-    rtcConnection = new RTCPeerConnection(configuration);
+    element.connection = new RTCPeerConnection(configuration);
 
-    rtcConnection.onicecandidate = function (evt) {
+    // send any ice candidates to other peer
+    element.connection.onicecandidate = function (evt) {
         if (evt.candidate) {
             videoSignalSocket.send(JSON.stringify({
                 'type': 'ice candidate',
@@ -131,23 +141,25 @@ function startSignaling() {
 
     // when we receive an offer, we return our offer
     // let the 'negotiationneeded' event trigger offer generation
-    rtcConnection.onnegotiationneeded = function () {
+    element.connection.onnegotiationneeded = function () {
         displaySignalMessage(' on negotiation called');
-        rtcConnection.createOffer(sendLocalDesc, logError);
+        element.connection.createOffer(sendLocalDesc, logError);
     }
 
     // once remote stream arrives, show it in remote video element
-    rtcConnection.onaddstream = function (evt) {
+    element.connection.onaddstream = function (evt) {
         displaySignalMessage('going to add their stream...');
+        document.querySelector('#video'+element.);
         theirVideoArea.srcObject = evt.stream;
     }
 
     // get a local stream, show it in our video tag and add it to be sent
-    startStream();
+    startStream(element);
 
 }
 
-function startStream() {
+// new
+function startStream(element) {
     console.log('startStream');
     let constraints = {
         video: {
@@ -160,19 +172,19 @@ function startStream() {
     navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
         console.log('Stream connected successfully');
         myVideoArea.srcObject = stream;
-        rtcConnection.addStream(stream);
+        element.connection.addStream(stream); // this triggers event our peer needs to get our stream
     }).catch(function (error) {
         console.log('error in stream:', error);
     });
 }
 
-function sendLocalDesc(desc) {
-    rtcConnection.setLocalDescription(desc, function () {
+function sendLocalDesc(element, desc) {
+    element.connection.setLocalDescription(desc, function () {
         displaySignalMessage('sending local description');
         videoSignalSocket.send(JSON.stringify({
             'type': 'SDP',
             'message': JSON.stringify({
-                'sdp': rtcConnection.localDescription
+                'sdp': rtcPeerConn.localDescription
             }),
             'room': SIGNAL_ROOM
         }));
